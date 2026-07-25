@@ -341,24 +341,28 @@ body::after {
 
 /* ===== 侧边栏 ===== */
 .sidebar {
-  width: 260px;
+  width: 240px;
   background: linear-gradient(
-    180deg,
+    135deg,
     rgba(255, 255, 255, 0.7) 0%,
     rgba(255, 255, 255, 0.5) 50%,
     rgba(255, 255, 255, 0.7) 100%
   );
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-right: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--r-xl);
   display: flex;
   flex-direction: column;
   position: fixed;
-  top: 0; left: 0; bottom: 0;
+  top: 16px;
+  left: 16px;
+  bottom: 16px;
   z-index: 100;
   box-shadow:
-    4px 0 32px rgba(0, 0, 0, 0.06),
-    inset -1px 0 0 rgba(255, 255, 255, 0.3);
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  overflow: hidden;
 }
 
 .sidebar-header {
@@ -485,7 +489,7 @@ body::after {
 /* ===== 主内容区 ===== */
 .main-content {
   flex: 1;
-  margin-left: 260px;
+  margin-left: 272px;
   padding: 40px 48px;
   min-height: 100vh;
   position: relative;
@@ -947,27 +951,30 @@ body::after {
   height: 56px;
   cursor: pointer;
   transition: all 0.15s;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
   border-radius: var(--r-md);
   vertical-align: top;
   backdrop-filter: blur(8px);
 }
 
 .schedule-cell:hover {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: inset 0 0 0 2px var(--border-hover), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
-.schedule-cell.some-free { background: rgba(45, 90, 39, 0.08); }
+.schedule-cell.some-free {
+  background: rgba(45, 90, 39, 0.18);
+  box-shadow: inset 0 0 0 2px rgba(45, 90, 39, 0.2);
+}
 
 .schedule-cell.all-free {
-  background: rgba(45, 90, 39, 0.15);
-  box-shadow: inset 0 0 0 3px var(--accent), 0 4px 16px rgba(45, 90, 39, 0.1);
+  background: rgba(45, 90, 39, 0.25);
+  box-shadow: inset 0 0 0 3px var(--accent), 0 4px 16px rgba(45, 90, 39, 0.15);
 }
 
 .schedule-cell.my-slot {
-  background: rgba(255, 181, 194, 0.25);
-  box-shadow: inset 0 0 0 3px var(--panda-pink), 0 4px 16px rgba(255, 181, 194, 0.15);
+  background: rgba(255, 181, 194, 0.35);
+  box-shadow: inset 0 0 0 3px var(--panda-pink), 0 4px 16px rgba(255, 181, 194, 0.2);
 }
 
 .cell-content {
@@ -1678,7 +1685,12 @@ body::after {
 
 /* ===== 响应式 ===== */
 @media (max-width: 768px) {
-  .sidebar { width: 64px; }
+  .sidebar {
+    width: 64px;
+    top: 8px;
+    left: 8px;
+    bottom: 8px;
+  }
   .sidebar-header h1,
   .nav-item span:not(.icon),
   .sidebar-footer .user-info,
@@ -1686,7 +1698,7 @@ body::after {
   .sidebar-header { justify-content: center; padding: 18px; }
   .sidebar-header .logo-icon { font-size: 28px; }
   .nav-item { justify-content: center; padding: 14px; }
-  .main-content { margin-left: 64px; padding: 24px; }
+  .main-content { margin-left: 88px; padding: 24px; }
   .lobby-grid { grid-template-columns: 1fr; }
   .week-selector { flex-wrap: wrap; justify-content: center; }
   .login-card::before,
