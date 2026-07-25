@@ -469,13 +469,14 @@ body::after {
 }
 
 .sidebar-footer .user-name {
-  font-size: clamp(12px, 2vw, 16px);
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
+  max-width: 120px;
+  display: block;
 }
 
 .sidebar-footer .user-hint {
@@ -778,19 +779,21 @@ body::after {
   gap: 16px;
   padding: 18px 20px;
   border-radius: var(--r-lg);
-  color: var(--text-2);
+  color: var(--text-1);
   transition: all var(--t);
   font-size: 17px;
   font-weight: 600;
   text-decoration: none;
-  border: 2px solid transparent;
+  border: 2px solid var(--border);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .quick-action-item:hover {
   background: var(--accent-dim);
   color: var(--accent);
-  border-color: var(--accent-dim);
+  border-color: var(--accent);
   transform: translateX(6px);
+  box-shadow: 0 4px 12px var(--accent-glow);
 }
 
 .quick-action-item .icon { font-size: 24px; width: 32px; text-align: center; }
