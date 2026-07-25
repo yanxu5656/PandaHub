@@ -272,22 +272,29 @@ async function deletePoll(pollId) {
   if (!confirm('确定要删除这个投票吗？')) return;
 
   try {
-    console.log('删除投票:', pollId);
-
+    // 按顺序删除关联数据
     const { error: e1 } = await db.from('poll_votes').delete().eq('poll_id', pollId);
-    if (e1) console.error('删除投票记录失败:', e1);
+    if (e1) {
+      console.error('删除投票记录失败:', e1);
+      alert('删除投票记录失败：' + e1.message);
+      return;
+    }
 
     const { error: e2 } = await db.from('poll_options').delete().eq('poll_id', pollId);
-    if (e2) console.error('删除投票选项失败:', e2);
+    if (e2) {
+      console.error('删除投票选项失败:', e2);
+      alert('删除投票选项失败：' + e2.message);
+      return;
+    }
 
     const { error: e3 } = await db.from('polls').delete().eq('id', pollId);
     if (e3) {
       console.error('删除投票失败:', e3);
-      alert('删除失败：' + e3.message);
+      alert('删除投票失败：' + e3.message);
       return;
     }
 
-    console.log('删除成功');
+    // 刷新页面
     window.location.reload();
   } catch (err) {
     console.error('删除异常:', err);
