@@ -112,8 +112,8 @@ async function loadMembers() {
     const online = isUserOnline(member.last_seen);
     return `
       <div class="member-item">
-        <span class="member-avatar">${member.avatar || '🐼'}</span>
-        <span class="member-name">${member.nickname}</span>
+        <span class="member-avatar">${escapeHtml(member.avatar || '🐼')}</span>
+        <span class="member-name">${escapeHtml(member.nickname)}</span>
         ${member.is_admin ? '<span class="admin-badge">管理员</span>' : ''}
         <span class="${online ? 'online-dot' : 'offline-dot'}" title="${online ? '在线' : '离线'}"></span>
       </div>
@@ -202,8 +202,14 @@ async function markAllNotificationsRead() {
   loadNotifications();
 }
 
+// 订阅实时更新
+let channels = [];
+
 function subscribeToUpdates() {
-  db
+  channels.forEach(ch => db.removeChannel(ch));
+  channels = [];
+
+  const ch1 = db
     .channel('notifications')
     .on('postgres_changes', {
       event: 'INSERT',
@@ -212,8 +218,9 @@ function subscribeToUpdates() {
       filter: `member_id=eq.${currentUser.id}`
     }, () => loadNotifications())
     .subscribe();
+  channels.push(ch1);
 
-  db
+  const ch2 = db
     .channel('polls')
     .on('postgres_changes', {
       event: '*',
@@ -221,9 +228,9 @@ function subscribeToUpdates() {
       table: 'polls'
     }, () => loadActivePolls())
     .subscribe();
+  channels.push(ch2);
 
-  // 订阅成员变化（在线状态更新）
-  db
+  const ch3 = db
     .channel('members')
     .on('postgres_changes', {
       event: 'UPDATE',
@@ -231,6 +238,11 @@ function subscribeToUpdates() {
       table: 'members'
     }, () => loadMembers())
     .subscribe();
+  channels.push(ch3);
+
+  window.addEventListener('beforeunload', () => {
+    channels.forEach(ch => db.removeChannel(ch));
+  });
 }
 
 async function handleLogout() {

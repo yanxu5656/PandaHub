@@ -11,7 +11,7 @@ const AVATARS = [
   '🐸', '🐵', '🦄', '🐲', '🦅', '🐺', '🐗', '🐴',
   '🐧', '🐢', '🐙', '🦋', '🐝', '🐞', '🦀', '🐳',
   '🦉', '🦇', '🦈', '🐊', '🦩', '🦚', '🦜', '🦢',
-  '🎮', '🎯', '🎲', '🎪', '🎨', '🎭', '🎪', '🎡',
+  '🎮', '🎯', '🎲', '🎪', '🎨', '🎭', '🎡', '🎢',
   '🌟', '⭐', '🌙', '☀️', '🔥', '💧', '⚡', '❄️',
   '🎸', '🥁', '🎺', '🎻', '🎹', '🎷', '🎵', '🎶',
   '🚀', '✈️', '🚂', '🚗', '🏎️', '🛸', '⛵', '🚁'
@@ -115,6 +115,14 @@ function isUserOnline(lastSeen) {
   const now = Date.now();
   const twoMinutes = 2 * 60 * 1000;
   return (now - lastSeenTime) < twoMinutes;
+}
+
+// HTML 转义（防止 XSS）
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 // 显示消息

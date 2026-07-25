@@ -1,6 +1,4 @@
-/* PandaHub v1.3 — 咱们裸熊风格 */
-
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+/* PandaHub v2.0 — 全面优化版 */
 
 :root {
   /* 熊猫配色 */
@@ -552,12 +550,22 @@ body::after {
 
 @keyframes cardFloat {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  50% { transform: translateY(-4px); }
 }
 
 @keyframes cardShine {
   0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
   100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+/* 减少动画对性能的影响 */
+@media (prefers-reduced-motion: reduce) {
+  .card, .mini-game-card, .logo-icon, .online-dot {
+    animation: none !important;
+  }
+  .card::before {
+    animation: none !important;
+  }
 }
 
 .card:hover {

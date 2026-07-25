@@ -159,7 +159,14 @@ function renderSchedule() {
 }
 
 // 绑定拖拽选择
+let documentMouseUpHandler = null;
+
 function bindDragEvents() {
+  // 移除旧的 document 监听器
+  if (documentMouseUpHandler) {
+    document.removeEventListener('mouseup', documentMouseUpHandler);
+  }
+
   const cells = document.querySelectorAll('.schedule-cell');
 
   cells.forEach(cell => {
@@ -181,12 +188,13 @@ function bindDragEvents() {
     });
   });
 
-  document.addEventListener('mouseup', () => {
+  documentMouseUpHandler = () => {
     if (isDragging) {
       isDragging = false;
       saveAvailability();
     }
-  });
+  };
+  document.addEventListener('mouseup', documentMouseUpHandler);
 }
 
 // 切换单元格

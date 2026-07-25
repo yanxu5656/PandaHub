@@ -299,12 +299,6 @@ async function deletePoll(pollId) {
 function subscribeToPollUpdates() {
   // 不自动刷新，避免删除后又加载回来
 }
-      table: 'poll_votes'
-    }, () => {
-      loadPolls();
-    })
-    .subscribe();
-}
 
 // 格式化时间
 function formatTime(timestamp) {
