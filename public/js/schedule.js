@@ -139,11 +139,13 @@ function renderSchedule() {
       else if (memberCount > 0) cellClass += ' some-free';
       if (isMySlot) cellClass += ' my-slot';
 
+      // 显示成员名字（缩写）
+      const displayNames = memberNames.map(n => n.length > 2 ? n.substring(0, 2) : n);
+
       html += `<td class="${cellClass}" data-date="${dateStr}" data-hour="${hour}" data-key="${key}">
         <div class="cell-content">
           ${memberCount > 0 ? `<span class="cell-count">${memberCount}</span>` : ''}
-          ${isMySlot ? '<span class="cell-check">✓</span>' : ''}
-          ${memberNames.length > 0 ? `<span class="cell-names">${memberNames.join(' ')}</span>` : ''}
+          ${displayNames.length > 0 ? `<span class="cell-names">${displayNames.join(' ')}</span>` : ''}
         </div>
       </td>`;
     });
