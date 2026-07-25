@@ -146,6 +146,7 @@ async function loadGames() {
   ]);
 
   const games = gamesResult.data || [];
+  allGames = games; // 保存到全局变量
   allMembers = membersResult.data || [];
   const memberGames = memberGamesResult.data || [];
 
