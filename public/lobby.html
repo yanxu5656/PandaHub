@@ -41,10 +41,10 @@
         </a>
       </nav>
       <div class="sidebar-footer">
-        <div class="user-avatar" id="user-avatar" style="cursor:pointer;" title="点击编辑个人信息">🐼</div>
-        <div class="user-info" style="cursor:pointer;" id="edit-profile-btn">
+        <div class="user-avatar" id="user-avatar">🐼</div>
+        <div class="user-info" id="edit-profile-btn">
           <div class="user-name" id="user-name">加载中...</div>
-          <div style="font-size:11px;color:var(--text-3);">点击编辑</div>
+          <div class="user-hint">点击编辑</div>
         </div>
         <button class="logout-btn" id="logout-btn" title="退出登录">🚪</button>
       </div>
@@ -64,8 +64,10 @@
             <h3 class="card-title">👥 成员</h3>
             <span id="online-count" class="online-count">0 在线</span>
           </div>
-          <div id="members-list" class="members-list">
-            <!-- 成员列表由JS填充 -->
+          <div class="scrollable-list">
+            <div id="members-list" class="members-list">
+              <!-- 成员列表由JS填充 -->
+            </div>
           </div>
         </div>
 
@@ -100,8 +102,10 @@
             <h3 class="card-title">🔔 通知</h3>
             <button id="mark-all-read" class="btn btn-ghost btn-sm">全部已读</button>
           </div>
-          <div id="notifications-list" class="notifications-list">
-            <p class="empty-text">暂无通知</p>
+          <div class="scrollable-list">
+            <div id="notifications-list" class="notifications-list">
+              <p class="empty-text">暂无通知</p>
+            </div>
           </div>
         </div>
 

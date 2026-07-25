@@ -141,9 +141,9 @@ function renderSchedule() {
 
       html += `<td class="${cellClass}" data-date="${dateStr}" data-hour="${hour}" data-key="${key}">
         <div class="cell-content">
-          ${memberCount > 0 ? `<span class="member-count">${memberCount}</span>` : ''}
-          ${isMySlot ? '<span class="my-mark">✓</span>' : ''}
-          ${memberNames.length > 0 ? `<span class="member-names" title="${memberNames.join(', ')}">${memberNames.map(n => n.charAt(0)).join('')}</span>` : ''}
+          ${memberCount > 0 ? `<span class="cell-count">${memberCount}</span>` : ''}
+          ${isMySlot ? '<span class="cell-check">✓</span>' : ''}
+          ${memberNames.length > 0 ? `<span class="cell-names">${memberNames.join(' ')}</span>` : ''}
         </div>
       </td>`;
     });

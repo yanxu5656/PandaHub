@@ -5,10 +5,16 @@ const SUPABASE_ANON_KEY = 'sb_publishable_cy_hJVugRbd75ZmB0hT4yA_BrvvxRue';
 // 初始化 Supabase 客户端
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 预设头像列表
+// 预设头像列表 - 扩展版
 const AVATARS = [
   '🐼', '🐻', '🐨', '🦊', '🐱', '🐶', '🦁', '🐯',
-  '🐸', '🐵', '🦄', '🐲', '🦅', '🐺', '🐗', '🐴'
+  '🐸', '🐵', '🦄', '🐲', '🦅', '🐺', '🐗', '🐴',
+  '🐧', '🐢', '🐙', '🦋', '🐝', '🐞', '🦀', '🐳',
+  '🦉', '🦇', '🦈', '🐊', '🦩', '🦚', '🦜', '🦢',
+  '🎮', '🎯', '🎲', '🎪', '🎨', '🎭', '🎪', '🎡',
+  '🌟', '⭐', '🌙', '☀️', '🔥', '💧', '⚡', '❄️',
+  '🎸', '🥁', '🎺', '🎻', '🎹', '🎷', '🎵', '🎶',
+  '🚀', '✈️', '🚂', '🚗', '🏎️', '🛸', '⛵', '🚁'
 ];
 
 // 当前用户
@@ -27,7 +33,6 @@ async function checkAuth() {
 
     currentUser = session.user;
 
-    // 获取用户资料
     const { data: profile, error: profileError } = await db
       .from('members')
       .select('*')
@@ -35,7 +40,6 @@ async function checkAuth() {
       .single();
 
     if (profileError || !profile) {
-      // 用户资料不存在，创建一个
       const metadata = currentUser.user_metadata || {};
       const nickname = metadata.nickname || currentUser.email.split('@')[0];
       const avatar = metadata.avatar || '🐼';
@@ -66,9 +70,7 @@ async function checkAuth() {
       currentProfile = profile;
     }
 
-    // 启动心跳
     startHeartbeat();
-
     return true;
   } catch (err) {
     console.error('检查登录状态失败:', err);
@@ -76,19 +78,15 @@ async function checkAuth() {
   }
 }
 
-// 启动心跳 - 每30秒更新一次在线状态
+// 启动心跳
 function startHeartbeat() {
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
   }
 
-  // 立即发送一次心跳
   sendHeartbeat();
-
-  // 每30秒发送一次心跳
   heartbeatInterval = setInterval(sendHeartbeat, 30000);
 
-  // 页面关闭时停止心跳
   window.addEventListener('beforeunload', () => {
     if (heartbeatInterval) {
       clearInterval(heartbeatInterval);
@@ -110,7 +108,7 @@ async function sendHeartbeat() {
   }
 }
 
-// 检查用户是否在线（2分钟内有心跳）
+// 检查用户是否在线
 function isUserOnline(lastSeen) {
   if (!lastSeen) return false;
   const lastSeenTime = new Date(lastSeen).getTime();
