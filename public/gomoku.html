@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PandaHub - 五子棋</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .game-container { max-width: 600px; margin: 0 auto; text-align: center; }
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(15, 1fr);
+      gap: 2px;
+      margin: 24px auto;
+      max-width: 500px;
+      background: var(--border);
+      padding: 2px;
+      border-radius: var(--r-sm);
+    }
+    .game-cell {
+      width: 32px;
+      height: 32px;
+      background: var(--surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .game-cell:hover { background: var(--surface-3); }
+    .game-cell.black::after, .game-cell.white::after {
+      content: '';
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+    }
+    .game-cell.black::after {
+      background: var(--neon-cyan);
+      box-shadow: 0 0 10px var(--neon-cyan-glow);
+    }
+    .game-cell.white::after {
+      background: var(--neon-magenta);
+      box-shadow: 0 0 10px var(--neon-magenta-glow);
+    }
+    .game-cell.disabled { pointer-events: none; }
+    .game-status {
+      font-size: 18px;
+      margin: 16px 0;
+      padding: 14px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+    }
+    .players-info {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin: 16px 0;
+    }
+    .player-info {
+      padding: 12px 20px;
+      background: var(--surface-1);
+      border: 2px solid var(--border);
+      border-radius: var(--r-md);
+    }
+    .player-info.active { border-color: var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan-dim); }
+    .btn-group { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon">🐼</span>
+        <h1>PandaHub</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="lobby.html" class="nav-item"><span class="icon">🏠</span><span>大厅</span></a>
+        <a href="schedule.html" class="nav-item"><span class="icon">📅</span><span>时间协调</span></a>
+        <a href="polls.html" class="nav-item"><span class="icon">🗳️</span><span>投票</span></a>
+        <a href="games.html" class="nav-item"><span class="icon">📚</span><span>游戏库</span></a>
+        <a href="mini-games.html" class="nav-item active"><span class="icon">🎯</span><span>小游戏</span></a>
+        <a href="admin.html" class="nav-item"><span class="icon">⚙️</span><span>管理</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="user-avatar">🐼</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">加载中...</div>
+        </div>
+        <button class="logout-btn" id="logout-btn" title="退出登录">🚪</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="game-container">
+        <div class="page-header">
+          <h1>⚫ 五子棋</h1>
+        </div>
+
+        <div class="players-info">
+          <div class="player-info" id="player-black">
+            <span>⚫</span>
+            <span id="player-black-name">等待玩家...</span>
+          </div>
+          <div class="player-info" id="player-white">
+            <span>⚪</span>
+            <span id="player-white-name">等待玩家...</span>
+          </div>
+        </div>
+
+        <div class="game-status" id="game-status">等待玩家加入...</div>
+
+        <div class="game-board" id="game-board"></div>
+
+        <div class="btn-group">
+          <button id="add-ai-btn" class="btn btn-accent" style="display:none;">添加 AI 对手</button>
+          <button id="restart-btn" class="btn btn-accent" style="display:none;">再来一局</button>
+          <a href="mini-games.html" class="btn btn-ghost">返回</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/fix.js"></script>
+  <script>
+    let roomData = null;
+    let players = [];
+    let myColor = null;
+    let currentTurn = 'black';
+    let gameOver = false;
+    let isAITurn = false;
+    const BOARD_SIZE = 15;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const loggedIn = await checkAuth();
+      if (!loggedIn) { window.location.href = 'index.html'; return; }
+      displayUserInfo();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomId = urlParams.get('room');
+      if (!roomId) { alert('无效的房间'); window.location.href = 'mini-games.html'; return; }
+
+      initBoard();
+      await loadRoom(roomId);
+
+      document.getElementById('logout-btn').addEventListener('click', handleLogout);
+      document.getElementById('restart-btn').addEventListener('click', () => resetGame(roomId));
+      document.getElementById('add-ai-btn').addEventListener('click', () => addAIPlayer(roomId));
+
+      subscribeToGameUpdates(roomId);
+    });
+
+    function displayUserInfo() {
+      if (currentProfile) {
+        document.getElementById('user-avatar').textContent = currentProfile.avatar || '🐼';
+        document.getElementById('user-name').textContent = currentProfile.nickname || '未知用户';
+      }
+    }
+
+    function initBoard() {
+      const board = document.getElementById('game-board');
+      board.innerHTML = '';
+      for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'game-cell';
+        cell.dataset.index = i;
+        cell.addEventListener('click', () => makeMove(cell));
+        board.appendChild(cell);
+      }
+    }
+
+    async function loadRoom(roomId) {
+      try {
+        // 1. 获取房间信息
+        const { data: room, error: roomError } = await db
+          .from('game_rooms')
+          .select('*')
+          .eq('id', roomId)
+          .single();
+
+        if (roomError || !room) {
+          console.error('加载房间失败:', roomError);
+          alert('加载房间失败：' + (roomError?.message || '房间不存在'));
+          window.location.href = 'mini-games.html';
+          return;
+        }
+
+        roomData = room;
+
+        // 2. 获取房间玩家
+        const { data: roomPlayers, error: playersError } = await db
+          .from('game_room_players')
+          .select('member_id, score')
+          .eq('room_id', roomId)
+          .order('created_at');
+
+        if (playersError) {
+          console.error('加载玩家失败:', playersError);
+        }
+
+        // 3. 获取玩家信息
+        const AI_UUID = '00000000-0000-0000-0000-000000000001';
+        players = [];
+        if (roomPlayers) {
+          for (const rp of roomPlayers) {
+            if (rp.member_id === AI_UUID) {
+              players.push({ ...rp, member: null, isAI: true });
+            } else if (rp.member_id) {
+              const { data: member } = await db
+                .from('members')
+                .select('id, nickname, avatar')
+                .eq('id', rp.member_id)
+                .single();
+              players.push({ ...rp, member, isAI: false });
+            }
+          }
+        }
+
+        // 确定我的颜色
+        myColor = null;
+        if (players.length >= 1 && players[0].member_id === currentUser.id) {
+          myColor = 'black';
+        } else if (players.length >= 2 && players[1].member_id === currentUser.id) {
+          myColor = 'white';
+        }
+
+        // 更新玩家信息显示
+        const playerBlackName = document.getElementById('player-black-name');
+        const playerWhiteName = document.getElementById('player-white-name');
+        const addAiBtn = document.getElementById('add-ai-btn');
+
+        if (players[0]) {
+          playerBlackName.textContent = players[0].member ? players[0].member.nickname : 'AI 玩家';
+        } else {
+          playerBlackName.textContent = '等待玩家...';
+        }
+        if (players[1]) {
+          playerWhiteName.textContent = players[1].member ? players[1].member.nickname : 'AI 玩家';
+        } else {
+          playerWhiteName.textContent = '等待玩家...';
+        }
+
+        // 显示添加 AI 按钮
+        if (roomData.host_id === currentUser.id && players.length < 2 && roomData.status === 'waiting') {
+          addAiBtn.style.display = 'inline-flex';
+        } else {
+          addAiBtn.style.display = 'none';
+        }
+
+        renderGameState();
+      } catch (err) {
+        console.error('加载房间异常:', err);
+        alert('加载房间失败：' + err.message);
+        window.location.href = 'mini-games.html';
+      }
+    }
+
+    function renderGameState() {
+      const state = roomData.state || {};
+      const board = state.board || Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+      currentTurn = state.currentTurn || 'black';
+      gameOver = state.gameOver || false;
+
+      document.querySelectorAll('.game-cell').forEach((cell, index) => {
+        cell.className = `game-cell ${board[index] || ''} ${gameOver || !myColor || myColor !== currentTurn ? 'disabled' : ''}`;
+      });
+
+      document.getElementById('player-black').className = `player-info ${currentTurn === 'black' ? 'active' : ''}`;
+      document.getElementById('player-white').className = `player-info ${currentTurn === 'white' ? 'active' : ''}`;
+
+      const status = document.getElementById('game-status');
+      if (gameOver) {
+        if (state.winner) {
+          const winnerName = state.winner === 'black' ?
+            (players[0]?.member?.nickname || 'AI') :
+            (players[1]?.member?.nickname || 'AI');
+          status.textContent = `${winnerName} 获胜！🎉`;
+        } else {
+          status.textContent = '平局！🤝';
+        }
+        document.getElementById('restart-btn').style.display = 'inline-flex';
+        document.getElementById('add-ai-btn').style.display = 'none';
+      } else if (players.length < 2) {
+        status.textContent = '等待第二个玩家加入...（可添加 AI 对手）';
+      } else {
+        const currentName = currentTurn === 'black' ?
+          (players[0]?.member?.nickname || 'AI') :
+          (players[1]?.member?.nickname || 'AI');
+        const isMyTurn = myColor === currentTurn;
+        status.textContent = isMyTurn ? '轮到你了！' : `等待 ${currentName} 下棋...`;
+      }
+
+      // AI 回合
+      if (!gameOver && players.length === 2) {
+        const isAIPlaying = (currentTurn === 'black' && !players[0]?.member) ||
+                            (currentTurn === 'white' && !players[1]?.member);
+        if (isAIPlaying) {
+          setTimeout(() => makeAIMove(roomData.id), 300);
+        }
+      }
+    }
+
+    const AI_UUID = '00000000-0000-0000-0000-000000000001';
+
+    async function addAIPlayer(roomId) {
+      if (players.length >= 2) return;
+
+      try {
+        await db.from('game_room_players').insert({ room_id: roomId, member_id: AI_UUID, score: 0 });
+        await db.from('game_rooms').update({ status: 'playing' }).eq('id', roomId);
+        await loadRoom(roomId);
+      } catch (err) {
+        console.error('添加 AI 失败:', err);
+        alert('添加 AI 失败：' + err.message);
+      }
+    }
+
+    async function makeAIMove(roomId) {
+      if (gameOver || isAITurn) return;
+
+      const state = roomData.state || {};
+      const board = state.board || Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+
+      const isAIPlaying = (currentTurn === 'black' && !players[0]?.member) ||
+                          (currentTurn === 'white' && !players[1]?.member);
+      if (!isAIPlaying) return;
+
+      isAITurn = true;
+
+      const move = getBestMove(board, currentTurn);
+      if (move !== -1) {
+        board[move] = currentTurn;
+        const winner = checkWinner(board, move);
+        const isDraw = !winner && board.every(cell => cell !== null);
+
+        await db.from('game_rooms').update({
+          state: { board, currentTurn: currentTurn === 'black' ? 'white' : 'black', gameOver: winner || isDraw, winner: winner || null }
+        }).eq('id', roomId);
+      }
+
+      isAITurn = false;
+    }
+
+    function getBestMove(board, color) {
+      const opponent = color === 'black' ? 'white' : 'black';
+      let bestScore = -1;
+      let bestMove = -1;
+
+      for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
+        if (board[i]) continue;
+
+        // 评估这个位置的分数
+        let score = 0;
+
+        // 检查四个方向
+        const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+        for (const [dr, dc] of directions) {
+          const myCount = countDirection(board, i, color, dr, dc);
+          const opCount = countDirection(board, i, opponent, dr, dc);
+
+          // 能赢
+          if (myCount >= 4) score += 100000;
+          // 能形成活四
+          else if (myCount === 3) score += 10000;
+          // 能形成活三
+          else if (myCount === 2) score += 1000;
+
+          // 防守：对手能赢
+          if (opCount >= 4) score += 50000;
+          // 防守：对手能形成活四
+          else if (opCount === 3) score += 5000;
+          // 防守：对手能形成活三
+          else if (opCount === 2) score += 500;
+        }
+
+        // 中心位置加分
+        const row = Math.floor(i / BOARD_SIZE);
+        const col = i % BOARD_SIZE;
+        const center = Math.floor(BOARD_SIZE / 2);
+        const dist = Math.abs(row - center) + Math.abs(col - center);
+        score += Math.max(0, 10 - dist);
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = i;
+        }
+      }
+
+      return bestMove;
+    }
+
+    function countDirection(board, pos, color, dr, dc) {
+      const row = Math.floor(pos / BOARD_SIZE);
+      const col = pos % BOARD_SIZE;
+      let count = 0;
+
+      for (let i = 1; i <= 4; i++) {
+        const r = row + dr * i;
+        const c = col + dc * i;
+        if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && board[r * BOARD_SIZE + c] === color) {
+          count++;
+        } else {
+          break;
+        }
+      }
+
+      for (let i = 1; i <= 4; i++) {
+        const r = row - dr * i;
+        const c = col - dc * i;
+        if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && board[r * BOARD_SIZE + c] === color) {
+          count++;
+        } else {
+          break;
+        }
+      }
+
+      return count;
+    }
+
+    async function makeMove(cell) {
+      if (gameOver || !myColor || myColor !== currentTurn || isAITurn) return;
+      if (players.length < 2) return;
+
+      const index = parseInt(cell.dataset.index);
+      const state = roomData.state || {};
+      const board = state.board || Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+
+      if (board[index]) return;
+
+      board[index] = myColor;
+      const winner = checkWinner(board, index);
+      const isDraw = !winner && board.every(cell => cell !== null);
+
+      await db.from('game_rooms').update({
+        state: { board, currentTurn: myColor === 'black' ? 'white' : 'black', gameOver: winner || isDraw, winner: winner || null }
+      }).eq('id', roomData.id);
+    }
+
+    function checkWinner(board, lastIndex) {
+      const color = board[lastIndex];
+      if (!color) return null;
+
+      const row = Math.floor(lastIndex / BOARD_SIZE);
+      const col = lastIndex % BOARD_SIZE;
+      const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+      for (const [dr, dc] of directions) {
+        let count = 1;
+
+        for (let i = 1; i < 5; i++) {
+          const r = row + dr * i;
+          const c = col + dc * i;
+          if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && board[r * BOARD_SIZE + c] === color) {
+            count++;
+          } else { break; }
+        }
+
+        for (let i = 1; i < 5; i++) {
+          const r = row - dr * i;
+          const c = col - dc * i;
+          if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && board[r * BOARD_SIZE + c] === color) {
+            count++;
+          } else { break; }
+        }
+
+        if (count >= 5) return color;
+      }
+
+      return null;
+    }
+
+    async function resetGame(roomId) {
+      await db.from('game_rooms').update({
+        state: { board: Array(BOARD_SIZE * BOARD_SIZE).fill(null), currentTurn: 'black', gameOver: false, winner: null }
+      }).eq('id', roomId);
+      document.getElementById('restart-btn').style.display = 'none';
+    }
+
+    function subscribeToGameUpdates(roomId) {
+      db.channel(`gomoku-${roomId}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_rooms', filter: `id=eq.${roomId}` }, (payload) => {
+          roomData = payload.new;
+          renderGameState();
+        })
+        .subscribe();
+
+      db.channel(`gomoku-players-${roomId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_room_players', filter: `room_id=eq.${roomId}` }, () => {
+          loadRoom(roomId);
+        })
+        .subscribe();
+    }
+
+    async function handleLogout() {
+      await db.auth.signOut();
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

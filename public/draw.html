@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PandaHub - 你画我猜</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .game-container { max-width: 800px; margin: 0 auto; }
+    .draw-layout { display: grid; grid-template-columns: 1fr 220px; gap: 20px; }
+    .canvas-area {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px;
+    }
+    .canvas-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .word-display {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      letter-spacing: 4px;
+    }
+    .timer {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      padding: 8px 16px;
+      background: var(--surface-2);
+      border-radius: var(--r-sm);
+    }
+    #draw-canvas {
+      width: 100%;
+      height: 350px;
+      background: white;
+      border-radius: var(--r-md);
+      cursor: crosshair;
+      display: block;
+    }
+    .tools {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .color-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .color-btn:hover { transform: scale(1.1); }
+    .color-btn.active { border-color: white; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+    .size-btn {
+      padding: 4px 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      color: var(--text-2);
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .size-btn.active { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+    .sidebar-panel { display: flex; flex-direction: column; gap: 12px; }
+    .guess-input { display: flex; gap: 8px; }
+    .guess-input input {
+      flex: 1;
+      height: 40px;
+      padding: 0 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      color: var(--text-1);
+      font-size: 14px;
+    }
+    .guess-input input:focus { outline: none; border-color: var(--neon-cyan); }
+    .chat-messages {
+      flex: 1;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 16px;
+      overflow-y: auto;
+      max-height: 250px;
+    }
+    .chat-msg { margin-bottom: 8px; font-size: 13px; }
+    .chat-msg .name { font-weight: 600; }
+    .chat-msg.correct { color: var(--success); font-weight: 600; }
+    .players-list {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 16px;
+    }
+    .player-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .player-row:last-child { border: none; }
+    .player-score { color: var(--neon-cyan); font-weight: 600; font-family: var(--font-mono); }
+    .btn-group { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon">🐼</span>
+        <h1>PandaHub</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="lobby.html" class="nav-item"><span class="icon">🏠</span><span>大厅</span></a>
+        <a href="schedule.html" class="nav-item"><span class="icon">📅</span><span>时间协调</span></a>
+        <a href="polls.html" class="nav-item"><span class="icon">🗳️</span><span>投票</span></a>
+        <a href="games.html" class="nav-item"><span class="icon">📚</span><span>游戏库</span></a>
+        <a href="mini-games.html" class="nav-item active"><span class="icon">🎯</span><span>小游戏</span></a>
+        <a href="admin.html" class="nav-item"><span class="icon">⚙️</span><span>管理</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="user-avatar">🐼</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">加载中...</div>
+        </div>
+        <button class="logout-btn" id="logout-btn" title="退出登录">🚪</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="game-container">
+        <div class="page-header">
+          <h1>🎨 你画我猜</h1>
+        </div>
+
+        <div class="draw-layout">
+          <div class="canvas-area">
+            <div class="canvas-header">
+              <div id="word-display" class="word-display">等待开始...</div>
+              <div id="timer" class="timer">60</div>
+            </div>
+            <canvas id="draw-canvas" width="500" height="350"></canvas>
+            <div class="tools" id="tools">
+              <button class="color-btn active" style="background:#000;" data-color="#000"></button>
+              <button class="color-btn" style="background:#fff;border:1px solid #ccc;" data-color="#fff"></button>
+              <button class="color-btn" style="background:#ff4757;" data-color="#ff4757"></button>
+              <button class="color-btn" style="background:#ffa502;" data-color="#ffa502"></button>
+              <button class="color-btn" style="background:#2ed573;" data-color="#2ed573"></button>
+              <button class="color-btn" style="background:#1e90ff;" data-color="#1e90ff"></button>
+              <span style="margin:0 4px;color:var(--text-3);">|</span>
+              <button class="size-btn active" data-size="3">细</button>
+              <button class="size-btn" data-size="8">中</button>
+              <button class="size-btn" data-size="15">粗</button>
+              <button class="btn btn-ghost btn-sm" id="clear-btn">清除</button>
+            </div>
+          </div>
+
+          <div class="sidebar-panel">
+            <div class="players-list">
+              <h4 style="margin-bottom:12px;">玩家</h4>
+              <div id="players-list"></div>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+              <p class="empty-text">等待游戏开始...</p>
+            </div>
+            <div class="guess-input">
+              <input type="text" id="guess-input" placeholder="输入答案...">
+              <button id="guess-btn" class="btn btn-accent">猜</button>
+            </div>
+            <div class="btn-group" style="margin-top:0;">
+              <button id="add-ai-btn" class="btn btn-accent btn-sm" style="display:none;">添加 AI 玩家</button>
+              <button id="start-btn" class="btn btn-accent btn-sm" style="display:none;">开始游戏</button>
+              <a href="mini-games.html" class="btn btn-ghost btn-sm">返回</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/fix.js"></script>
+  <script>
+    let roomData = null;
+    let players = [];
+    let isDrawer = false;
+    let canvas, ctx;
+    let isDrawing = false;
+    let currentColor = '#000';
+    let currentSize = 3;
+    let gameStarted = false;
+    let timerInterval = null;
+    let timeLeft = 60;
+
+    const WORDS = ['苹果', '太阳', '房子', '猫咪', '汽车', '飞机', '电脑', '手机', '披萨', '冰淇淋', '西瓜', '篮球', '吉他', '眼镜', '雨伞', '蛋糕', '足球', '电视', '椅子', '书本'];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const loggedIn = await checkAuth();
+      if (!loggedIn) { window.location.href = 'index.html'; return; }
+      displayUserInfo();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomId = urlParams.get('room');
+      if (!roomId) { alert('无效的房间'); window.location.href = 'mini-games.html'; return; }
+
+      initCanvas();
+      await loadRoom(roomId);
+
+      document.getElementById('logout-btn').addEventListener('click', handleLogout);
+      document.getElementById('guess-btn').addEventListener('click', submitGuess);
+      document.getElementById('guess-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') submitGuess(); });
+      document.getElementById('clear-btn').addEventListener('click', clearCanvas);
+      document.getElementById('add-ai-btn').addEventListener('click', () => addAIPlayer(roomId));
+      document.getElementById('start-btn').addEventListener('click', () => startGame(roomId));
+
+      document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentColor = btn.dataset.color;
+        });
+      });
+
+      document.querySelectorAll('.size-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentSize = parseInt(btn.dataset.size);
+        });
+      });
+
+      subscribeToGameUpdates(roomId);
+    });
+
+    function displayUserInfo() {
+      if (currentProfile) {
+        document.getElementById('user-avatar').textContent = currentProfile.avatar || '🐼';
+        document.getElementById('user-name').textContent = currentProfile.nickname || '未知用户';
+      }
+    }
+
+    function initCanvas() {
+      canvas = document.getElementById('draw-canvas');
+      ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      canvas.addEventListener('mousedown', startDraw);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', endDraw);
+      canvas.addEventListener('mouseleave', endDraw);
+    }
+
+    function startDraw(e) {
+      if (!isDrawer) return;
+      isDrawing = true;
+      const rect = canvas.getBoundingClientRect();
+      ctx.beginPath();
+      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    }
+
+    function draw(e) {
+      if (!isDrawing || !isDrawer) return;
+      const rect = canvas.getBoundingClientRect();
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = currentSize;
+      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.stroke();
+    }
+
+    function endDraw() {
+      if (isDrawing) {
+        isDrawing = false;
+        ctx.beginPath();
+        // 保存画布状态
+        if (roomData) {
+          updateCanvasState();
+        }
+      }
+    }
+
+    async function clearCanvas() {
+      if (!isDrawer) return;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await updateCanvasState();
+    }
+
+    async function updateCanvasState() {
+      const canvasData = canvas.toDataURL();
+      await db.from('game_rooms').update({
+        state: { ...roomData.state, canvasData }
+      }).eq('id', roomData.id);
+    }
+
+    async function loadRoom(roomId) {
+      try {
+        // 1. 获取房间信息
+        const { data: room, error: roomError } = await db
+          .from('game_rooms')
+          .select('*')
+          .eq('id', roomId)
+          .single();
+
+        if (roomError || !room) {
+          console.error('加载房间失败:', roomError);
+          alert('加载房间失败：' + (roomError?.message || '房间不存在'));
+          window.location.href = 'mini-games.html';
+          return;
+        }
+
+        roomData = room;
+        gameStarted = room.status === 'playing';
+
+        // 2. 获取房间玩家
+        const { data: roomPlayers, error: playersError } = await db
+          .from('game_room_players')
+          .select('member_id, score')
+          .eq('room_id', roomId)
+          .order('created_at');
+
+        if (playersError) {
+          console.error('加载玩家失败:', playersError);
+        }
+
+        // 3. 获取玩家信息
+        const AI_UUID = '00000000-0000-0000-0000-000000000001';
+        players = [];
+        if (roomPlayers) {
+          for (const rp of roomPlayers) {
+            if (rp.member_id === AI_UUID) {
+              players.push({ ...rp, member: null, isAI: true });
+            } else if (rp.member_id) {
+              const { data: member } = await db
+                .from('members')
+                .select('id, nickname, avatar')
+                .eq('id', rp.member_id)
+                .single();
+              players.push({ ...rp, member, isAI: false });
+            }
+          }
+        }
+
+        const addAiBtn = document.getElementById('add-ai-btn');
+        const startBtn = document.getElementById('start-btn');
+
+        // 房主且未开始时显示按钮
+        if (roomData.host_id === currentUser.id && !gameStarted) {
+          addAiBtn.style.display = players.length < 8 ? 'inline-flex' : 'none';
+          startBtn.style.display = players.length >= 2 ? 'inline-flex' : 'none';
+        } else {
+          addAiBtn.style.display = 'none';
+          startBtn.style.display = 'none';
+        }
+
+        renderPlayers();
+        renderGameState();
+      } catch (err) {
+        console.error('加载房间异常:', err);
+        alert('加载房间失败：' + err.message);
+        window.location.href = 'mini-games.html';
+      }
+    }
+
+    function renderPlayers() {
+      const container = document.getElementById('players-list');
+      container.innerHTML = players.map(p => `
+        <div class="player-row">
+          <span>${p.member ? p.member.avatar + ' ' + p.member.nickname : '🤖 AI'}</span>
+          <span class="player-score">${p.score || 0} 分</span>
+        </div>
+      `).join('');
+    }
+
+    function renderGameState() {
+      const state = roomData.state || {};
+
+      if (state.drawer) {
+        isDrawer = state.drawer === currentUser.id;
+        const drawerPlayer = players.find(p => p.member_id === state.drawer);
+        document.getElementById('word-display').textContent = isDrawer ? state.word : '猜猜画的是什么？';
+      }
+
+      if (state.canvasData) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = state.canvasData;
+      }
+    }
+
+    const AI_UUID = '00000000-0000-0000-0000-000000000001';
+
+    async function addAIPlayer(roomId) {
+      try {
+        await db.from('game_room_players').insert({ room_id: roomId, member_id: AI_UUID, score: 0 });
+        await loadRoom(roomId);
+      } catch (err) {
+        console.error('添加 AI 失败:', err);
+        alert('添加 AI 失败：' + err.message);
+      }
+    }
+
+    async function startGame(roomId) {
+      if (players.length < 2) {
+        alert('至少需要2个玩家');
+        return;
+      }
+
+      // 选一个画画的人
+      const drawerIndex = Math.floor(Math.random() * players.length);
+      const drawer = players[drawerIndex].member_id;
+      const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+
+      await db.from('game_rooms').update({
+        status: 'playing',
+        state: { drawer, word, canvasData: null, round: 1 }
+      }).eq('id', roomId);
+
+      await loadRoom(roomId);
+    }
+
+    async function submitGuess() {
+      const input = document.getElementById('guess-input');
+      const guess = input.value.trim();
+      if (!guess || !gameStarted) return;
+
+      const state = roomData.state || {};
+
+      if (guess === state.word) {
+        addChatMessage(`${currentProfile.nickname} 猜对了！🎉`, true);
+
+        // 加分
+        const playerIndex = players.findIndex(p => p.member_id === currentUser.id);
+        if (playerIndex !== -1) {
+          const newScore = (players[playerIndex].score || 0) + 10;
+          await db.from('game_room_players').update({ score: newScore })
+            .eq('room_id', roomData.id).eq('member_id', currentUser.id);
+        }
+
+        // 画手也加分
+        const drawerIndex = players.findIndex(p => p.member_id === state.drawer);
+        if (drawerIndex !== -1) {
+          const newScore = (players[drawerIndex].score || 0) + 5;
+          await db.from('game_room_players').update({ score: newScore })
+            .eq('room_id', roomData.id).eq('member_id', state.drawer);
+        }
+
+        // 开始新回合
+        await startNewRound();
+      } else {
+        addChatMessage(`${currentProfile.nickname}: ${guess}`);
+      }
+
+      input.value = '';
+    }
+
+    function addChatMessage(text, isCorrect = false) {
+      const container = document.getElementById('chat-messages');
+      if (container.querySelector('.empty-text')) {
+        container.innerHTML = '';
+      }
+      const msg = document.createElement('div');
+      msg.className = `chat-msg ${isCorrect ? 'correct' : ''}`;
+      msg.textContent = text;
+      container.appendChild(msg);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function startNewRound() {
+      const state = roomData.state || {};
+      const nextRound = (state.round || 1) + 1;
+
+      // 选下一个画画的人
+      const currentDrawerIndex = players.findIndex(p => p.member_id === state.drawer);
+      const nextDrawerIndex = (currentDrawerIndex + 1) % players.length;
+      const drawer = players[nextDrawerIndex].member_id;
+      const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+
+      // 清空画布
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      await db.from('game_rooms').update({
+        state: { drawer, word, canvasData: null, round: nextRound }
+      }).eq('id', roomData.id);
+    }
+
+    function subscribeToGameUpdates(roomId) {
+      db.channel(`draw-${roomId}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_rooms', filter: `id=eq.${roomId}` }, (payload) => {
+          roomData = payload.new;
+          renderGameState();
+        })
+        .subscribe();
+
+      db.channel(`draw-players-${roomId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_room_players', filter: `room_id=eq.${roomId}` }, () => {
+          loadRoom(roomId);
+        })
+        .subscribe();
+    }
+
+    async function handleLogout() {
+      await db.auth.signOut();
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

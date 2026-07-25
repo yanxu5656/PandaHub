@@ -1,0 +1,16 @@
+{
+  "name": "helper",
+  "version": "1.0.0",
+  "description": "小圈子辅助应用 — 时间协调、投票、游戏库、联机小游戏",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.8"
+  }
+}

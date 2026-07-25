@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PandaHub - 胖达窝</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo">
+        <span class="logo-icon">🐼</span>
+        <h1>PandaHub</h1>
+        <p class="subtitle">胖达窝</p>
+      </div>
+
+      <!-- 登录表单 -->
+      <div id="login-form" class="form-section active">
+        <h2>登录</h2>
+        <div class="input-group">
+          <label for="login-email">邮箱</label>
+          <input type="email" id="login-email" placeholder="your@email.com" required>
+        </div>
+        <div class="input-group">
+          <label for="login-password">密码</label>
+          <input type="password" id="login-password" placeholder="输入密码" required>
+        </div>
+        <button id="login-btn" class="btn-primary">登录</button>
+        <p class="switch-text">还没有账号？<a href="#" id="show-register">注册一个</a></p>
+      </div>
+
+      <!-- 注册表单 -->
+      <div id="register-form" class="form-section">
+        <h2>注册</h2>
+        <div class="input-group">
+          <label for="reg-email">邮箱</label>
+          <input type="email" id="reg-email" placeholder="your@email.com" required>
+        </div>
+        <div class="input-group">
+          <label for="reg-password">密码</label>
+          <input type="password" id="reg-password" placeholder="至少6位" required>
+        </div>
+        <div class="input-group">
+          <label for="reg-nickname">昵称</label>
+          <input type="text" id="reg-nickname" placeholder="你在窝里的名字" required>
+        </div>
+        <div class="input-group">
+          <label>选个头像</label>
+          <div class="avatar-picker" id="avatar-picker">
+            <!-- 头像选项由JS生成 -->
+          </div>
+        </div>
+        <button id="register-btn" class="btn-primary">注册</button>
+        <p class="switch-text">已有账号？<a href="#" id="show-login">去登录</a></p>
+      </div>
+
+      <!-- 提示信息 -->
+      <div id="message" class="message"></div>
+    </div>
+  </div>
+
+  <script src="js/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/fix.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

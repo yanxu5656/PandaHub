@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PandaHub - 时间协调</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon">🐼</span>
+        <h1>PandaHub</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="lobby.html" class="nav-item">
+          <span class="icon">🏠</span>
+          <span>大厅</span>
+        </a>
+        <a href="schedule.html" class="nav-item active">
+          <span class="icon">📅</span>
+          <span>时间协调</span>
+        </a>
+        <a href="polls.html" class="nav-item">
+          <span class="icon">🗳️</span>
+          <span>投票</span>
+        </a>
+        <a href="games.html" class="nav-item">
+          <span class="icon">📚</span>
+          <span>游戏库</span>
+        </a>
+        <a href="mini-games.html" class="nav-item">
+          <span class="icon">🎯</span>
+          <span>小游戏</span>
+        </a>
+        <a href="admin.html" class="nav-item">
+          <span class="icon">⚙️</span>
+          <span>管理</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="user-avatar">🐼</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">加载中...</div>
+        </div>
+        <button class="logout-btn" id="logout-btn" title="退出登录">🚪</button>
+      </div>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+      <div class="page-header">
+        <h1>📅 时间协调</h1>
+        <p>选择你有空的时间段，看看大家什么时候都能玩</p>
+      </div>
+
+      <!-- 周选择器 -->
+      <div class="week-selector">
+        <button id="prev-week" class="btn btn-ghost btn-sm">◀ 上周</button>
+        <span id="week-label">本周</span>
+        <button id="next-week" class="btn btn-ghost btn-sm">下周 ▶</button>
+        <button id="today-btn" class="btn btn-accent btn-sm">回到本周</button>
+      </div>
+
+      <!-- 时间表 -->
+      <div class="schedule-container">
+        <div class="schedule-grid" id="schedule-grid">
+          <!-- 由JS动态生成 -->
+        </div>
+      </div>
+
+      <!-- 共同空闲时间汇总 -->
+      <div class="card summary-card">
+        <div class="card-header">
+          <h3 class="card-title">🎯 共同空闲时间</h3>
+          <button id="create-activity-btn" class="btn btn-accent btn-sm" disabled>创建活动</button>
+        </div>
+        <div id="common-free-summary" class="common-free-list">
+          <p class="empty-text">选择时间段后，这里会显示谁和你一样有空</p>
+        </div>
+      </div>
+
+      <!-- 活动列表 -->
+      <div class="card" style="margin-top:24px;">
+        <div class="card-header">
+          <h3 class="card-title">📅 已创建的活动</h3>
+        </div>
+        <div id="activities-list">
+          <p class="empty-text">暂无活动</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/fix.js"></script>
+  <script src="js/schedule.js"></script>
+</body>
+</html>

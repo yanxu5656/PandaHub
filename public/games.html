@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PandaHub - 游戏库</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .steam-search-box {
+      margin-bottom: 24px;
+    }
+    .search-input-wrapper {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .search-input-wrapper input {
+      flex: 1;
+      height: 48px;
+      padding: 0 16px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      color: var(--text-1);
+      font-family: var(--font-body);
+      font-size: 16px;
+    }
+    .search-input-wrapper input:focus {
+      outline: none;
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 0 3px var(--neon-cyan-dim);
+    }
+    .search-results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .steam-game-card {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .steam-game-card:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px var(--neon-cyan-dim);
+    }
+    .steam-game-card img {
+      width: 120px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: var(--r-sm);
+    }
+    .steam-game-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .steam-game-name {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+    .steam-game-price {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--neon-cyan);
+    }
+    .steam-game-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .steam-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: var(--surface-3);
+      border-radius: var(--r-sm);
+      color: var(--text-3);
+    }
+    .loading-spinner {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-3);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon">🐼</span>
+        <h1>PandaHub</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="lobby.html" class="nav-item"><span class="icon">🏠</span><span>大厅</span></a>
+        <a href="schedule.html" class="nav-item"><span class="icon">📅</span><span>时间协调</span></a>
+        <a href="polls.html" class="nav-item"><span class="icon">🗳️</span><span>投票</span></a>
+        <a href="games.html" class="nav-item active"><span class="icon">📚</span><span>游戏库</span></a>
+        <a href="mini-games.html" class="nav-item"><span class="icon">🎯</span><span>小游戏</span></a>
+        <a href="admin.html" class="nav-item"><span class="icon">⚙️</span><span>管理</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="user-avatar">🐼</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">加载中...</div>
+        </div>
+        <button class="logout-btn" id="logout-btn" title="退出登录">🚪</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="games-header">
+        <div class="page-header">
+          <h1>📚 游戏库</h1>
+          <p>搜索 Steam 游戏添加到游戏库</p>
+        </div>
+      </div>
+
+      <!-- Steam 搜索 -->
+      <div class="steam-search-box">
+        <div class="search-input-wrapper">
+          <input type="text" id="steam-search-input" placeholder="搜索 Steam 游戏...">
+          <button id="steam-search-btn" class="btn btn-accent">搜索</button>
+          <button id="steam-import-btn" class="btn btn-outline">🎮 批量添加</button>
+          <button id="manual-add-btn" class="btn btn-ghost">手动添加</button>
+        </div>
+        <div id="search-results" class="search-results" style="display:none;"></div>
+      </div>
+
+      <!-- 批量添加模态框 -->
+      <div id="steam-import-modal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+          <h2>🎮 批量添加游戏</h2>
+          <div class="input-group">
+            <label>游戏类型</label>
+            <select id="game-genre-select">
+              <option value="FPS">🔫 FPS</option>
+              <option value="RPG">⚔️ RPG</option>
+              <option value="MOBA">🏟️ MOBA</option>
+              <option value="合作">🤝 合作</option>
+              <option value="竞技">🏆 竞技</option>
+              <option value="休闲">🎯 休闲</option>
+              <option value="其他">📦 其他</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>游戏名称（每行一个）</label>
+            <textarea id="game-list-input" rows="10" placeholder="CS:GO&#10;Dota 2&#10;PUBG&#10;GTA V&#10;..." style="width:100%;padding:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text-1);font-size:14px;resize:vertical;font-family:inherit;"></textarea>
+          </div>
+          <div id="import-status" style="display:none;margin:16px 0;padding:12px;background:var(--surface-2);border-radius:var(--r-md);"></div>
+          <div class="modal-actions">
+            <button id="cancel-import-btn" class="btn btn-ghost">取消</button>
+            <button id="start-import-btn" class="btn btn-accent">添加</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 多人拥有 -->
+      <div class="common-games-section">
+        <h3>🎮 多人拥有的游戏</h3>
+        <div id="common-games" class="games-grid">
+          <p class="empty-text">加载中...</p>
+        </div>
+      </div>
+
+      <!-- 全部游戏 -->
+      <div class="common-games-section">
+        <h3>📋 全部游戏</h3>
+        <div id="all-games" class="games-grid">
+          <p class="empty-text">加载中...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 手动添加模态框 -->
+  <div id="add-game-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <h2>手动添加游戏</h2>
+      <div class="input-group">
+        <label>游戏名称</label>
+        <input type="text" id="game-name" placeholder="输入游戏名称">
+      </div>
+      <div class="input-group">
+        <label>平台</label>
+        <select id="game-platform">
+          <option value="Steam">Steam</option>
+          <option value="Epic">Epic</option>
+          <option value="PS">PlayStation</option>
+          <option value="Xbox">Xbox</option>
+          <option value="Switch">Switch</option>
+          <option value="PC">PC</option>
+          <option value="Mobile">手机</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>最多人数</label>
+        <input type="number" id="game-max-players" min="1" max="100" value="4">
+      </div>
+      <div class="input-group">
+        <label>类型</label>
+        <select id="game-genre">
+          <option value="合作">合作</option>
+          <option value="竞技">竞技</option>
+          <option value="休闲">休闲</option>
+          <option value="RPG">RPG</option>
+          <option value="FPS">FPS</option>
+          <option value="MOBA">MOBA</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button id="cancel-game-btn" class="btn btn-ghost">取消</button>
+        <button id="submit-game-btn" class="btn btn-accent">添加</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/fix.js"></script>
+  <script src="js/steam.js"></script>
+  <script src="js/games.js"></script>
+</body>
+</html>

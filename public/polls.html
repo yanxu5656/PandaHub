@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PandaHub - 投票</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon">🐼</span>
+        <h1>PandaHub</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="lobby.html" class="nav-item">
+          <span class="icon">🏠</span>
+          <span>大厅</span>
+        </a>
+        <a href="schedule.html" class="nav-item">
+          <span class="icon">📅</span>
+          <span>时间协调</span>
+        </a>
+        <a href="polls.html" class="nav-item active">
+          <span class="icon">🗳️</span>
+          <span>投票</span>
+        </a>
+        <a href="games.html" class="nav-item">
+          <span class="icon">📚</span>
+          <span>游戏库</span>
+        </a>
+        <a href="mini-games.html" class="nav-item">
+          <span class="icon">🎯</span>
+          <span>小游戏</span>
+        </a>
+        <a href="admin.html" class="nav-item">
+          <span class="icon">⚙️</span>
+          <span>管理</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="user-avatar">🐼</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">加载中...</div>
+        </div>
+        <button class="logout-btn" id="logout-btn" title="退出登录">🚪</button>
+      </div>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+      <div class="polls-header">
+        <div class="page-header">
+          <h1>🗳️ 投票</h1>
+          <p>发起投票，决定今晚玩什么</p>
+        </div>
+        <button id="create-poll-btn" class="btn btn-accent">+ 发起投票</button>
+      </div>
+
+      <!-- 投票列表 -->
+      <div id="polls-list" class="polls-list">
+        <p class="empty-text">暂无投票</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- 创建投票模态框 -->
+  <div id="create-poll-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <h2>发起投票</h2>
+      <div class="input-group">
+        <label>投票问题</label>
+        <input type="text" id="poll-question" placeholder="今晚玩什么？">
+      </div>
+      <div class="input-group">
+        <label>选项（从游戏库选择）</label>
+        <div id="poll-options-list" class="poll-options-select">
+          <!-- 由JS填充 -->
+        </div>
+      </div>
+      <div class="input-group">
+        <label>截止时间（可选）</label>
+        <input type="datetime-local" id="poll-deadline">
+      </div>
+      <div class="modal-actions">
+        <button id="cancel-poll-btn" class="btn btn-ghost">取消</button>
+        <button id="submit-poll-btn" class="btn btn-accent">创建投票</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/fix.js"></script>
+  <script src="js/polls.js"></script>
+</body>
+</html>

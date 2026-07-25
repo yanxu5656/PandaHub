@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PandaHub - 管理</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon">🐼</span>
+        <h1>PandaHub</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="lobby.html" class="nav-item"><span class="icon">🏠</span><span>大厅</span></a>
+        <a href="schedule.html" class="nav-item"><span class="icon">📅</span><span>时间协调</span></a>
+        <a href="polls.html" class="nav-item"><span class="icon">🗳️</span><span>投票</span></a>
+        <a href="games.html" class="nav-item"><span class="icon">📚</span><span>游戏库</span></a>
+        <a href="mini-games.html" class="nav-item"><span class="icon">🎯</span><span>小游戏</span></a>
+        <a href="admin.html" class="nav-item active"><span class="icon">⚙️</span><span>管理</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="user-avatar">🐼</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">加载中...</div>
+        </div>
+        <button class="logout-btn" id="logout-btn" title="退出登录">🚪</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1>⚙️ 管理面板</h1>
+        <p>管理成员、投票和游戏库</p>
+      </div>
+
+      <!-- 权限提示 -->
+      <div id="no-permission" style="display:none;">
+        <div class="card">
+          <p class="empty-text">你不是管理员，无法访问此页面</p>
+          <a href="lobby.html" class="btn btn-ghost" style="margin-top:16px;">返回大厅</a>
+        </div>
+      </div>
+
+      <div id="admin-content" style="display:none;">
+        <!-- 成员管理 -->
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header">
+            <h3 class="card-title">👥 成员管理</h3>
+          </div>
+          <div id="members-admin-list" class="members-list"></div>
+        </div>
+
+        <!-- 投票管理 -->
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header">
+            <h3 class="card-title">🗳️ 投票管理</h3>
+          </div>
+          <div id="polls-admin-list" class="polls-list"></div>
+        </div>
+
+        <!-- 游戏库管理 -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">📚 游戏库管理</h3>
+          </div>
+          <div id="games-admin-list" class="games-grid"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/fix.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const loggedIn = await checkAuth();
+      if (!loggedIn) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      displayUserInfo();
+
+      // 检查管理员权限
+      if (!currentProfile || !currentProfile.is_admin) {
+        document.getElementById('no-permission').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('admin-content').style.display = 'block';
+      document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+      await loadAll();
+    });
+
+    function displayUserInfo() {
+      if (currentProfile) {
+        document.getElementById('user-avatar').textContent = currentProfile.avatar || '🐼';
+        document.getElementById('user-name').textContent = currentProfile.nickname || '未知用户';
+      }
+    }
+
+    async function loadAll() {
+      await Promise.all([loadMembers(), loadPolls(), loadGames()]);
+    }
+
+    // ===== 成员管理 =====
+    async function loadMembers() {
+      const { data: members } = await db.from('members').select('*').order('created_at');
+      const container = document.getElementById('members-admin-list');
+
+      if (!members || members.length === 0) {
+        container.innerHTML = '<p class="empty-text">暂无成员</p>';
+        return;
+      }
+
+      container.innerHTML = members.map(m => `
+        <div class="member-item">
+          <span class="member-avatar">${m.avatar || '🐼'}</span>
+          <span class="member-name">${m.nickname}</span>
+          ${m.is_admin ? '<span class="admin-badge">管理员</span>' : ''}
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            ${m.id !== currentUser.id ? `
+              <button class="btn btn-sm ${m.is_admin ? 'btn-outline' : 'btn-accent'}" onclick="toggleAdmin('${m.id}', ${!m.is_admin})">
+                ${m.is_admin ? '取消管理员' : '设为管理员'}
+              </button>
+              <button class="btn btn-sm btn-danger" onclick="deleteMember('${m.id}', '${m.nickname}')">
+                删除
+              </button>
+            ` : '<span style="font-size:12px;color:var(--text-3);">（你）</span>'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function toggleAdmin(memberId, makeAdmin) {
+      const { error } = await db.from('members').update({ is_admin: makeAdmin }).eq('id', memberId);
+      if (error) {
+        alert('操作失败：' + error.message);
+        return;
+      }
+      await loadMembers();
+    }
+
+    async function deleteMember(memberId, nickname) {
+      if (!confirm(`确定要删除成员 "${nickname}" 吗？此操作不可撤销。`)) return;
+
+      // 删除相关数据
+      await db.from('availability').delete().eq('member_id', memberId);
+      await db.from('poll_votes').delete().eq('member_id', memberId);
+      await db.from('activity_participants').delete().eq('member_id', memberId);
+      await db.from('game_room_players').delete().eq('member_id', memberId);
+      await db.from('member_games').delete().eq('member_id', memberId);
+      await db.from('notifications').delete().eq('member_id', memberId);
+      await db.from('members').delete().eq('id', memberId);
+
+      await loadAll();
+    }
+
+    // ===== 投票管理 =====
+    async function loadPolls() {
+      const { data: polls } = await db.from('polls').select(`
+        *,
+        creator:members(nickname, avatar),
+        options:poll_options(id, game:games(name)),
+        votes:poll_votes(count)
+      `).order('created_at', { ascending: false });
+
+      const container = document.getElementById('polls-admin-list');
+
+      if (!polls || polls.length === 0) {
+        container.innerHTML = '<p class="empty-text">暂无投票</p>';
+        return;
+      }
+
+      container.innerHTML = polls.map(p => `
+        <div class="poll-card" style="margin-bottom:12px;">
+          <div class="poll-card-header">
+            <div>
+              <div class="poll-card-question">${p.question}</div>
+              <div class="poll-creator">${p.creator?.avatar || '🐼'} ${p.creator?.nickname || '未知'} · ${new Date(p.created_at).toLocaleDateString('zh-CN')}</div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="deletePoll(${p.id})">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function deletePoll(pollId) {
+      if (!confirm('确定要删除这个投票吗？')) return;
+      await db.from('poll_votes').delete().eq('poll_id', pollId);
+      await db.from('poll_options').delete().eq('poll_id', pollId);
+      await db.from('polls').delete().eq('id', pollId);
+      await loadPolls();
+    }
+
+    // ===== 游戏库管理 =====
+    async function loadGames() {
+      const { data: games } = await db.from('games').select('*').order('name');
+      const container = document.getElementById('games-admin-list');
+
+      if (!games || games.length === 0) {
+        container.innerHTML = '<p class="empty-text">暂无游戏</p>';
+        return;
+      }
+
+      container.innerHTML = games.map(g => `
+        <div class="game-card">
+          <div class="game-card-header">
+            <div class="game-name">${g.name}</div>
+            <button class="btn btn-sm btn-danger" onclick="deleteGame(${g.id})">删除</button>
+          </div>
+          <div class="game-info">
+            <span>${g.platform || '未知'}</span>
+            <span>👥 ${g.max_players || '?'}人</span>
+            <span class="game-genre">${g.genre || '未分类'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function deleteGame(gameId) {
+      if (!confirm('确定要删除这个游戏吗？')) return;
+      await db.from('member_games').delete().eq('game_id', gameId);
+      await db.from('poll_options').delete().eq('game_id', gameId);
+      await db.from('games').delete().eq('id', gameId);
+      await loadGames();
+    }
+
+    async function handleLogout() {
+      await db.auth.signOut();
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>
