@@ -70,7 +70,7 @@
     console.log('🔧 fix.js 开始初始化');
 
     // 等待一下让其他脚本先运行
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     // 检查登录状态
     const isLoggedIn = await checkLoginStatus();
