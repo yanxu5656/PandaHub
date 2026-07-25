@@ -4,7 +4,9 @@
   "description": "小圈子辅助应用 — 时间协调、投票、游戏库、联机小游戏",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "keywords": [],
   "author": "",
@@ -12,5 +14,8 @@
   "type": "commonjs",
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8"
+  },
+  "devDependencies": {
+    "wrangler": "^4.114.0"
   }
 }
