@@ -9,7 +9,8 @@
       "Bash(curl -s \"https://api.github.com/search/repositories?q=claude+skill+ui+cute+panda+kawaii&sort=stars&order=desc\")",
       "Bash(curl -s \"https://api.github.com/search/repositories?q=claude+skill+css+animation+beautiful&sort=stars&order=desc\")",
       "Bash(curl -s \"https://api.github.com/search/repositories?q=claude+skill+frontend+design+stars:>5&sort=stars&order=desc\")",
-      "Bash(curl -s \"https://raw.githubusercontent.com/Leonxlnx/taste-skill/main/README.md\")"
+      "Bash(curl -s \"https://raw.githubusercontent.com/Leonxlnx/taste-skill/main/README.md\")",
+      "WebSearch"
     ]
   }
 }
