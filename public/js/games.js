@@ -23,6 +23,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('steam-import-btn').addEventListener('click', showSteamImportModal);
   document.getElementById('cancel-import-btn').addEventListener('click', hideSteamImportModal);
   document.getElementById('start-import-btn').addEventListener('click', startSteamImport);
+
+  // 编辑游戏
+  document.getElementById('cancel-edit-btn').addEventListener('click', hideEditModal);
+  document.getElementById('save-edit-btn').addEventListener('click', saveGameEdit);
 });
 
 let allMembers = [];
@@ -177,6 +181,9 @@ function renderSharedGames(games) {
   container.querySelectorAll('.delete-game-btn').forEach(btn => {
     btn.addEventListener('click', () => deleteGame(btn));
   });
+  container.querySelectorAll('.edit-game-btn').forEach(btn => {
+    btn.addEventListener('click', () => showEditModal(parseInt(btn.dataset.gameId)));
+  });
 }
 
 // 渲染全部游戏（按类型分类）
@@ -232,6 +239,9 @@ function renderAllGames(games, memberGames) {
   container.querySelectorAll('.delete-game-btn').forEach(btn => {
     btn.addEventListener('click', () => deleteGame(btn));
   });
+  container.querySelectorAll('.edit-game-btn').forEach(btn => {
+    btn.addEventListener('click', () => showEditModal(parseInt(btn.dataset.gameId)));
+  });
 }
 
 // 获取类型图标
@@ -261,11 +271,16 @@ function renderGameCard(game, isCommon, isOwned = false) {
   return `
     <div class="game-card">
       <div class="game-card-header">
-        <div class="game-name">${game.name}</div>
-        <button class="btn btn-sm btn-danger delete-game-btn" data-game-id="${game.id}" title="删除游戏">🗑️</button>
+        <div class="game-name">${escapeHtml(game.name)}</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-outline edit-game-btn" data-game-id="${game.id}" title="编辑">✏️</button>
+          <button class="btn btn-sm btn-danger delete-game-btn" data-game-id="${game.id}" title="删除">🗑️</button>
+        </div>
       </div>
       <div class="game-info">
+        ${game.platform ? `<span>🖥️ ${escapeHtml(game.platform)}</span>` : ''}
         ${game.max_players ? `<span>👥 ${game.max_players}人</span>` : ''}
+        ${game.genre ? `<span class="game-genre">${escapeHtml(game.genre)}</span>` : ''}
       </div>
       <div class="game-owners">
         ${isCommon ? '✅ 大家都有' : `${game.ownerCount || 0} 人拥有`}
@@ -324,6 +339,61 @@ function hideAddModal() {
   document.getElementById('add-game-modal').style.display = 'none';
   document.getElementById('game-name').value = '';
   document.getElementById('game-max-players').value = '4';
+}
+
+// 显示编辑模态框
+function showEditModal(gameId) {
+  const game = allGames.find(g => g.id === gameId);
+  if (!game) return;
+
+  document.getElementById('edit-game-id').value = game.id;
+  document.getElementById('edit-game-name').value = game.name || '';
+  document.getElementById('edit-game-platform').value = game.platform || 'PC';
+  document.getElementById('edit-game-max-players').value = game.max_players || 4;
+  document.getElementById('edit-game-genre').value = game.genre || '其他';
+
+  document.getElementById('edit-game-modal').style.display = 'flex';
+}
+
+// 隐藏编辑模态框
+function hideEditModal() {
+  document.getElementById('edit-game-modal').style.display = 'none';
+}
+
+// 保存编辑
+async function saveGameEdit() {
+  const gameId = parseInt(document.getElementById('edit-game-id').value);
+  const name = document.getElementById('edit-game-name').value.trim();
+  const platform = document.getElementById('edit-game-platform').value;
+  const maxPlayers = parseInt(document.getElementById('edit-game-max-players').value);
+  const genre = document.getElementById('edit-game-genre').value;
+
+  if (!name) {
+    alert('游戏名称不能为空');
+    return;
+  }
+
+  try {
+    const { error } = await db
+      .from('games')
+      .update({
+        name,
+        platform,
+        max_players: maxPlayers,
+        genre
+      })
+      .eq('id', gameId);
+
+    if (error) {
+      alert('保存失败：' + error.message);
+      return;
+    }
+
+    hideEditModal();
+    window.location.reload();
+  } catch (err) {
+    alert('保存失败：' + err.message);
+  }
 }
 
 // 手动添加游戏

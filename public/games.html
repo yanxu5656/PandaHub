@@ -236,6 +236,51 @@
     </div>
   </div>
 
+  <!-- 编辑游戏模态框 -->
+  <div id="edit-game-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <h2>编辑游戏</h2>
+      <input type="hidden" id="edit-game-id">
+      <div class="input-group">
+        <label>游戏名称</label>
+        <input type="text" id="edit-game-name" placeholder="游戏名称">
+      </div>
+      <div class="input-group">
+        <label>平台</label>
+        <select id="edit-game-platform">
+          <option value="Steam">Steam</option>
+          <option value="Epic">Epic</option>
+          <option value="PS">PlayStation</option>
+          <option value="Xbox">Xbox</option>
+          <option value="Switch">Switch</option>
+          <option value="PC">PC</option>
+          <option value="Mobile">手机</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>最多人数</label>
+        <input type="number" id="edit-game-max-players" min="1" max="100">
+      </div>
+      <div class="input-group">
+        <label>类型</label>
+        <select id="edit-game-genre">
+          <option value="合作">合作</option>
+          <option value="竞技">竞技</option>
+          <option value="休闲">休闲</option>
+          <option value="RPG">RPG</option>
+          <option value="FPS">FPS</option>
+          <option value="MOBA">MOBA</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button id="cancel-edit-btn" class="btn btn-ghost">取消</button>
+        <button id="save-edit-btn" class="btn btn-accent">保存</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/supabase.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/fix.js"></script>
