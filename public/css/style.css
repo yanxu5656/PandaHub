@@ -89,21 +89,6 @@ body {
   100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.3); }
 }
 
-/* 页面加载过渡 */
-.page-transition {
-  animation: pageIn 0.3s ease;
-}
-
-@keyframes pageIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* 主内容区淡入 */
-.main-content {
-  animation: pageIn 0.3s ease;
-}
-
 /* 视频背景 */
 .video-bg {
   position: fixed;
